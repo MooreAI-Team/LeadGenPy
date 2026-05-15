@@ -1,8 +1,8 @@
 from WebScrapper.store import Store
-from WebScrapper.scrapper import Scrappers 
+from WebScrapper.scrapper import Scrappers
 from Configs.selenium_config import driver
-from EmailController.personalized_email_sender import Emails 
-
+from EmailController.personalized_email_sender import Emails
+from Evaluation.evaluator import Evaluator
 
 
 def main():
@@ -10,6 +10,7 @@ def main():
     emails = Emails()
     scrapper = Scrappers()
     store = Store()
+    evaluator = Evaluator()
     mode = int(input())
 
     try:
@@ -22,14 +23,14 @@ def main():
             business_name = input("Enter the Business Name: ")
             location = input("Enter the Location: ")
             scrapper.scrape(business_name, location)
-            
+
             print("\n<== EXTRACTED COMPLETED ==>\n")
             main()
         elif mode == 2:
             print("\n<== EXTRACTED DATASET ==>\n")
-            
+
             store.get_all_dataset()
-            
+
             print("\n<== EXTRACTED DATASET ==>\n")
             main()
         elif mode == 3:
@@ -39,37 +40,56 @@ def main():
             main()
         elif mode == 4:
             print("\n<== GENERATE PERSONALIZED MAILS ==>\n")
-            
+
             emails.send()
-            
+
             print("\n<== FINISHED SENDING PERSONALIZED MAILS ==>\n")
             main()
         elif mode == 5:
             print("<== PRODUCTION MODE - STARTED ==>")
-            
+
             business_name = input("Enter the Business name: ")
             location = input("Enter the Location: ")
             scrapper.scrape(business_name, location)
-            
+
             print("\n DATASET LOADED")
             print("\n TRANSFERING DATASET")
-            
+
             store.append_all_data_to_sheet()
-            
+
             print("\n SENDING PERSONALIZED EMAILS")
-            
+
             emails.send()
-            
+
             mode()
             print("<== PRODUCTION MODE - FINISHED ==>")
+        elif mode == 6:
+            print("<== MOOREAI MODE - STARTED ==>")
+
+            location = input("Enter the Location: ")
+
+            for business in all_businesses:
+                mooreai.scrapper.scrape(business, location)
+            print("\n DATASET LOADED")
+
+            print("\n RANKING AND EVALUATING DATASET")
+            evaluator.rank()
+            print("\n RANKING AND EVALUATION COMPLETED")
+
+            print("\n TRANSFERING DATASET")
+            store.append_all_data_to_sheet()
+            print("\n DATASET TRANSFERRED")
+
+            main()
         else:
             print("<== DEVELOPMENT MODE - STARTED ==>")
-            
+
             store.remove_sheet_duplicates()
-            
+
             print("<== DEVELOPMENT MODE - FINISHED ==>")
             main()
     except Exception as error:
         print(error)
+
 
 main()
