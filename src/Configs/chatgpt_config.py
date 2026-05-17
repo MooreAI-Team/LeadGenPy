@@ -1,7 +1,7 @@
 import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-print("[LOG] - INITIALIZED OPENAI API")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+print("[LOG] OpenAI client ready")
