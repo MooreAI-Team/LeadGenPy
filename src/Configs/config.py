@@ -40,24 +40,24 @@ request_timeout = 10    # HTTP requests timeout (evaluator + email fetch)
 wait_feed = 15          # WebDriverWait for the Maps feed to appear
 wait_page = 10          # WebDriverWait for business page h1 to appear
 
-# List of common business types to be used in the MooreAI mode for scraping.
+# categories for MooreAI mode — add/remove as needed
 all_business_categories = [
     "Restaurant",
-    "Cafe"
+    "Cafe",
+    "Retail Store",
+    "Fitness Center",
+    "Salon",
+    "Auto Repair Shop",
+    "Law Firm",
+    "Accounting Firm",
+    "Real Estate Agency",
+    "Medical Clinic"
 ]
 
-# all_business_categories = [
-#     "Restaurant",
-#     "Cafe",
-#     "Retail Store",
-#     "Fitness Center",
-#     "Salon",
-#     "Auto Repair Shop",
-#     "Law Firm",
-#     "Accounting Firm",
-#     "Real Estate Agency",
-#     "Medical Clinic"
-# ]
+# in DEV, only run the first 2 to keep test runs short
+if DEV:
+    all_business_categories = all_business_categories[:2]
+
 
 # JSON structure for storing the business data
 business_data = {
