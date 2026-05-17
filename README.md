@@ -7,123 +7,135 @@
   ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
 </div>
-LeadGenPy transforms lead generation by extracting Google Maps business details with Selenium, processing data, and dynamically generating personalized messages using the Chat GPT API. Seamlessly integrate with Google Sheets API for an efficient and impactful strategy.
 
-## Overview
+LeadGenPy scrapes business data from Google Maps, evaluates each website using GPT, scores each lead by quality, and saves results to Google Sheets and a local JSON file.
 
-The Python script, `main.py`, controls the entire operation of LeadGenPy. It utilizes Selenium with a web driver to enter [Google Maps](https://maps.google.com), search for specific business types, and extract relevant information.
+## What it does
 
-LeadGenPy performs the following tasks:
+For each business found on Google Maps, LeadGenPy:
 
-1. **Data Extraction:**
-    - Searches for a specific business type and location.
-    - Loops through search results, extracts business details, and stores data in CSV (`data.csv`) and JSON (`data.json`) files simultaneously.
-    - Data extracted includes:
-        ```json
-              {
-                  "BusinessName": "Sample Business",
-                  "Address": "123 Main Street, Cityville, State 12345",
-                  "PhoneNumber": "123-456-7890",
-                  "Website": "samplebusiness.com",
-                  "Category": "General Business",
-                  "Rating": "4.2",
-                  "ReviewCount": "10",
-                  "google_map_link": "https://www.google.com/maps/place/Sample+Business/data=...",
-                  "email": "info@samplebusiness.com",
-                  "status": "success"
-              }
+1. Extracts name, category, phone, email, address, website, rating, and Maps link
+2. Fetches the business website and sends the HTML to GPT for evaluation
+3. Scores the lead based on website quality issues (no HTTPS, no mobile, old copyright, etc.)
+4. Tries to find the owner/contact name from the website text
+5. Saves everything to Google Sheets and `assets/data.json`
 
-        ```
-2. **User Interaction:**
-    - Offers options to the user:
-        - Terminate (`mode == 0`).
-        - Start extraction (`mode == 1`).
-        - View extracted dataset (`mode == 2`).
-        - Transfer data to Google Sheets (`mode == 3`).
-        - Generate personalized emails using Chat GPT (`mode == 4`).
-        - Production mode (combining extraction, data transfer, and email sending) (`mode == 5`).
-        - Development mode for sheet cleanup (`else`).
+Data captured per business:
 
-3. **Authentication:**
-    - Prompts for Google sign-in if not authenticated (used for storing data in Google Sheets).
-4. **Select Extraction Mode (Mode 1):**
+```json
+{
+    "BusinessName": "Sample Business",
+    "Category": "Restaurant",
+    "City": "Fargo",
+    "Phone": "701-123-4567",
+    "Email": "info@samplebusiness.com",
+    "Address": "123 Main Street, Fargo, ND",
+    "Website": "https://samplebusiness.com",
+    "GoogleMapsLink": "https://www.google.com/maps/place/...",
+    "Priority": 45,
+    "OwnerContactPerson": "John Smith",
+    "Rating": "3.8",
+    "WebsiteExists": "Yes",
+    "HTTPS": "Yes",
+    "MobileFriendly": "No",
+    "CurrentCopyright": "No",
+    "HasContactForm": "No",
+    "HasBookingQuoteCTA": "No",
+    "GoodTitleMetaDescription": "Yes",
+    "LooksOriginalAndUnique": "No",
+    "OutreachStatus": "null"
+}
+```
 
-    - Choose the extraction mode to search for a specific business type and location on Google Maps.
-    - Follow on-screen instructions to provide the business name and location.
-    - The script will loop through search results, extract business details, and store data in CSV (data.csv) and JSON (data.json) files.
-5. **Lead Generation Using Chat GPT API (Mode 4):**
+## Modes
 
-    - Choose the lead generation mode to generate personalized messages using the OpenAI Chat GPT API.
-    - The script will use the collected business data to create custom lead messages.
-6. **Sending Emails (Mode 4):**
-
-    - The script will use the generated messages to send personalized emails to the extracted email addresses.
-7. **Additional Modes:**
-
-    - Explore other modes for viewing the extracted dataset, transferring data to Google Sheets, and more.
-8. **Production Mode (Mode 5):**
-
-    - A combined mode that includes extraction, data transfer, and email sending for a streamlined workflow.
-9. **Development Mode (Else):**
-    - Cleanup mode for sheet maintenance.
-
-
-
+| Mode | Description |
+|------|-------------|
+| `1` | Single category extract — enter a category and location |
+| `2` | MooreAI mode — runs all categories in `config.all_business_categories` for a given location |
+| `0` | Exit |
 
 ## Getting Started
 
-Follow these steps to set up and run LeadGenPy locally:
+### 1. Clone the repo
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-username/LeadGenPy.git
-   ```
-2. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-   **Dependencies:**
-    - `selenium==4.5.0`
-    - `python-dotenv==0.21.0`
-    - `beautifulsoup4==4.12.2`
-    - `requests==2.28.1`
-    - `google-auth-oauthlib==1.1.0`
-    - `google-auth-httplib2==0.1.0`
-    - `google-auth==2.15.0`
-    - `google-api-python-client==2.70.0`
-    - `google-api-core==2.11.0`
-    - `googleapis-common-protos==1.57.0`
-    - `openai==0.28.0`
-    - `lxml`
+```bash
+git clone https://github.com/MooreAI-Team/LeadGenPy.git
+cd LeadGenPy
+```
 
-3. **Environment Variables:**
-    - Create a `.env` file with the following content:
-        ```
-        OPENAI_API_KEY="Your-OpenAI-API-KEY"
-        SPREADSHEET_ID="Your-Google-sheet-ID"
-        EMAIL_ADDRESS="Your-Email-Address"
-        ```
-    - Sample 
-4. **Download ChromeDriver:**
-    - Download the appropriate version of [ChromeDriver](https://chromedriver.chromium.org/downloads) based on your Chrome browser version to avoid compatibility errors.
-    - Copy the Chromedriver.exe to the `assets\chromedriver.exe` folder
-    - To check your browser version, Open Chrome and enter this URL ``chrome://version``
-      
-5. **Run the Script:**
-   ```bash
-   cd src && python main.py
-   ```
-6. **Authenticate with Google (if prompted):**
-    - This is necessary for storing data in Google Sheets.
-7. **Select the desired mode:**
-    - Choose the option that corresponds to your workflow.
-### License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 2. Create a virtual environment and install dependencies
 
-### Contributing
-Feel free to contribute! Check out the [Contributing Guidelines](CONTRIBUTING.md) for more information.
+```bash
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+```
 
-### Contact
-- Discord: #wikkie
-- LinkedIn: [Vignesh Mayilsamy](https://www.linkedin.com/in/vignesh-mayilsamy/)
-- Email: wikkiedev@gmail.com
+### 3. Set up environment variables
+
+Create a `.env` file in the project root:
+
+```
+OPENAI_API_KEY=your-openai-api-key
+SPREADSHEET_ID=your-google-sheet-id
+DEV_MODE=true
+```
+
+`DEV_MODE=true` opens a visible browser and caps results at 5 per run. Set to `false` for a full headless run.
+
+### 4. Add your Google service account
+
+Place your Google Sheets service account JSON file at:
+
+```
+assets/service_account.json
+```
+
+Make sure the service account has edit access to your spreadsheet.
+
+### 5. Run
+
+```bash
+python src/main.py
+```
+
+ChromeDriver is managed automatically by Selenium, no need to download manually.
+
+## Configuration
+
+All tunable values live in `src/Configs/config.py`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEV` | reads `DEV_MODE` from `.env` | Visible browser + 5-result cap when true |
+| `delay` | `3` | Sleep (seconds) after an error |
+| `delay_scroll` | `1.5` | Pause between scroll attempts |
+| `delay_page_load` | `2` | Pause after clicking "More results" |
+| `delay_between_visits` | `1` | Pause between visiting each business page |
+| `request_timeout` | `10` | HTTP timeout for website fetches |
+| `wait_feed` | `15` | Selenium wait for Maps feed to appear |
+| `wait_page` | `10` | Selenium wait for business page to load |
+| `all_business_categories` | Categories used in MooreAI mode |
+
+## Priority scoring
+
+Each lead gets a priority score based on website issues found by GPT. Higher = worse website = better lead for outreach.
+
+| Issue | Points |
+|-------|--------|
+| No website | 50 |
+| Website does not load | 45 |
+| Not mobile friendly | 25 |
+| No HTTPS | 20 |
+| No contact form | 15 |
+| No clear call-to-action | 15 |
+| Looks like old Wix/Weebly/GoDaddy template | 15 |
+| Old copyright year | 10 |
+| Poor title/meta description | 10 |
+| Rating below 3.0 (bonus) | +10 |
+
+
+---
+
+This is a fork of the original [LeadGenPy](https://github.com/Wikkiee/LeadGenPy) project by [WikkiE](https://github.com/Wikkiee). All original work and credit belongs to him.
