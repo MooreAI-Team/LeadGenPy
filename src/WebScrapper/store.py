@@ -1,79 +1,63 @@
 import json
 import os
 from Configs.google_api_config import service
+from Configs import config
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class Store:
-    __SPREADSHEET_ID = os.getenv("SPREADSHEET_ID") 
+    __SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
     sheet = service["sheet"]
-    def generate_json(self,data):
-        with open('../assets/data.json','w+') as json_file:
-            json.dump(data,json_file)
-            json_file.close()
 
-    def get_all_sheet_data(self):
-        store = Store()
-        store.remove_sheet_duplicates()
-        result = self.sheet.values().get(spreadsheetId=self.__SPREADSHEET_ID,range="Sheet1").execute()
-        return result.get('values',[])
-    def update_personalized_email_status(self,identifier,action):
-            values = service["sheet"].values().get(spreadsheetId=self.__SPREADSHEET_ID, range="sheet1").execute()
-            data = values.get('values', []) 
-            if not data:
-                print(f"[LOG] - No data found in sheet1")
-                return
-            
-            for row in data:
-                if row[0] == identifier:  
-                    row[-1] = action  
-                    update_request = {
-                        'range': f"sheet1!A{data.index(row) + 1}:J{data.index(row) + 1}",
-                        'values': [row]
-                    }
-                    
-                    try:
-                        response = service["sheet"].values().update(
-                            spreadsheetId=self.__SPREADSHEET_ID, range=update_request['range'],valueInputOption="USER_ENTERED", body=update_request).execute()
-                        print(f'[LOG] - UPDATE LOG SAVED:\nRESPONSE: {response}')
-                    except Exception as error:
-                        print(f'Error updating user: {error}')
-                    break
-            else:
-                print(f"[LOG] - User '{identifier}' not found in sheet1")
-    def insert_one(self,values):
-        result = self.sheet.values().append(spreadsheetId=self.__SPREADSHEET_ID,range="Sheet1!A2:I2",valueInputOption="USER_ENTERED",body={
-            'values':values
-        }).execute()
+    def __init__(self):
+        self.generate_sheet_headers()
 
-    def get_all_dataset(self):
-        with open("../assets/data.json",'r') as json_file:
-            data = json.loads(json_file.read())
-            print(json.dumps(data,indent=4))
-    
-    def append_all_data_to_sheet(self):
-        with open("../assets/data.json",'r') as json_file:
-            data = json.loads(json_file.read())
-            store = Store()
-            for item in data:
-                store.insert_one([list(item.values())])
-            json_file.close()
-    def remove_sheet_duplicates(self):
-        print("[LOG] - REMOVING DUPLICATE ROWS")
-        request = {
-        'requests': [
-            {
-                'deleteDuplicates': {
-                    'range': {
-                        'sheetId':0,
-                    }
-                }
-            }
-        ]
-        }
-        try:
-            response = service["sheet"].batchUpdate(spreadsheetId=self.__SPREADSHEET_ID, body=request).execute()
-            print(f'[LOG] - DUPLICATE ROWS REMOVED\nRESPONSE: {response}')
-        except Exception as error:
-            print(f'[LOG] - Error removing duplicates: {error}')
+    # write headers only if the sheet is empty
+    def generate_sheet_headers(self):
+        result = self.sheet.values().get(
+            spreadsheetId=self.__SPREADSHEET_ID,
+            range="Sheet1!A1:A1"
+        ).execute()
+        if result.get('values'):
+            return  # headers already there
+        self.sheet.values().update(
+            spreadsheetId=self.__SPREADSHEET_ID,
+            range="Sheet1!A1:T1",
+            valueInputOption="USER_ENTERED",
+            body={"values": [config.headers]}
+        ).execute()
+
+    # this function will append the extracted data to a JSON file. it handles nonexistent or empty files as well.
+    def append_to_json(self, data):
+        json_path = os.path.join(config.ROOT_DIR, "assets/data.json")
+        existing = []
+        if os.path.exists(json_path):
+            with open(json_path) as f:
+                content = f.read()
+            if content.strip():
+                existing = json.loads(content)
+        existing.append(data)
+        with open(json_path, 'w') as f:
+            json.dump(existing, f, indent=4)
+
+    # check if a business link already exists in the JSON, it prevents duplicate runs
+    def is_duplicate(self, maps_link):
+        json_path = os.path.join(config.ROOT_DIR, "assets/data.json")
+        if not os.path.exists(json_path):
+            return False
+        with open(json_path) as f:
+            content = f.read()
+        if not content.strip():
+            return False
+        data = json.loads(content)
+        return any(entry.get("GoogleMapsLink") == maps_link for entry in data)
+
+    # insert a single row into Google Sheets
+    def insert_one_row(self, values):
+        self.sheet.values().append(
+            spreadsheetId=self.__SPREADSHEET_ID,
+            range="Sheet1!A2:T2",
+            valueInputOption="USER_ENTERED",
+            body={'values': values}
+        ).execute()
