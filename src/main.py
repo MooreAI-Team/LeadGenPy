@@ -1,95 +1,39 @@
-from WebScrapper.store import Store
 from WebScrapper.scrapper import Scrappers
 from Configs.selenium_config import driver
-from EmailController.personalized_email_sender import Emails
-from Evaluation.evaluator import Evaluator
+from Configs import config
 
 
 def main():
-    print("\n<=== MENU ===>\n1 - EXTRACT DATASET\n2 - SHOW DATASET\n3 - TRANSFER DATASET TO SHEET\n4 - GENERATE AND SEND PERSONALIZED EMAILS\n5 - PRODUCTION MODE (It'll do All 4 steps)\n0 - Exit the script \n<=== END ===>\n")
-    emails = Emails()
     scrapper = Scrappers()
-    store = Store()
-    evaluator = Evaluator()
-    mode = int(input())
 
-    try:
-        if mode == 0:
-            print("\n<== Terminated ==>\n")
-            driver.close()
-        elif mode == 1:
-            print("\n<== EXTRACTION STARTED ==>\n")
+    while True:
+        print("\n[MENU]\n  1 - Single business category extract\n  2 - MooreAI mode\n  0 - Exit\n")
+        try:
+            mode = int(input())
+        except ValueError:
+            print("[LOG] Invalid option")
+            continue
 
-            business_name = input("Enter the Business Name: ")
-            location = input("Enter the Location: ")
-            scrapper.scrape(business_name, location)
-
-            print("\n<== EXTRACTED COMPLETED ==>\n")
-            main()
-        elif mode == 2:
-            print("\n<== EXTRACTED DATASET ==>\n")
-
-            store.get_all_dataset()
-
-            print("\n<== EXTRACTED DATASET ==>\n")
-            main()
-        elif mode == 3:
-            print("\n<== TRANSFERING ==>\n")
-            store.append_all_data_to_sheet()
-            print("\n<== TRANSFER COMPLETED ==>\n")
-            main()
-        elif mode == 4:
-            print("\n<== GENERATE PERSONALIZED MAILS ==>\n")
-
-            emails.send()
-
-            print("\n<== FINISHED SENDING PERSONALIZED MAILS ==>\n")
-            main()
-        elif mode == 5:
-            print("<== PRODUCTION MODE - STARTED ==>")
-
-            business_name = input("Enter the Business name: ")
-            location = input("Enter the Location: ")
-            scrapper.scrape(business_name, location)
-
-            print("\n DATASET LOADED")
-            print("\n TRANSFERING DATASET")
-
-            store.append_all_data_to_sheet()
-
-            print("\n SENDING PERSONALIZED EMAILS")
-
-            emails.send()
-
-            mode()
-            print("<== PRODUCTION MODE - FINISHED ==>")
-        elif mode == 6:
-            print("<== MOOREAI MODE - STARTED ==>")
-
-            location = input("Enter the Location: ")
-
-            for business in all_businesses:
-                mooreai.scrapper.scrape(business, location)
-            print("\n DATASET LOADED")
-
-            print("\n RANKING AND EVALUATING DATASET")
-            evaluator.rank()
-            print("\n RANKING AND EVALUATION COMPLETED")
-
-            print("\n TRANSFERING DATASET")
-            store.append_all_data_to_sheet()
-            print("\n DATASET TRANSFERRED")
-
-            main()
-        else:
-            print("<== DEVELOPMENT MODE - STARTED ==>")
-
-            store.remove_sheet_duplicates()
-
-            print("<== DEVELOPMENT MODE - FINISHED ==>")
-            main()
-    except Exception as error:
-        print(error)
+        try:
+            if mode == 0:
+                print("[LOG] Terminated")
+                driver.quit()
+                break
+            elif mode == 1:
+                business_category = input("Enter the Business Category: ")
+                location = input("Enter the Location: ")
+                scrapper.scrape(business_category, location)
+            elif mode == 2:
+                location = input("Enter the Location: ")
+                print(f"[LOG] MooreAI mode -- {len(config.all_business_categories)} categories\n")
+                for business_category in config.all_business_categories:
+                    scrapper.scrape(business_category, location)
+                print("[LOG] MooreAI mode complete")
+            else:
+                print("[LOG] Invalid option")
+        except Exception as error:
+            print(error)
 
 
-main()
+if __name__ == "__main__":
+    main()
