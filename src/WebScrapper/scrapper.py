@@ -56,48 +56,60 @@ class Scrappers:
                     continue
 
                 print(f"\n[{count + 1}/{total}] ----------------------------------------")
-                soup, business_data = self.extract_details(link, scrapeDetail)
+                try:
+                    soup, business_data = self.extract_details(link, scrapeDetail)
 
-                # Fill in the business data dictionary with the extracted details and some default values.
-                # website and rating must be set before evaluate() so the priority score can be calculated based on them
-                business_data["Website"] = scrapeDetail.get_website(soup)
-                business_data["Rating"] = scrapeDetail.get_rating(soup)
+                    # website and rating must be set before evaluate() so the priority score is accurate
+                    business_data["Website"] = scrapeDetail.get_website(soup)
+                    business_data["Rating"] = scrapeDetail.get_rating(soup)
 
-                priority, evaluation = ev.evaluate(business_data["Website"], business_data["Rating"])
+                    priority, evaluation = ev.evaluate(business_data["Website"], business_data["Rating"])
 
-                business_data["BusinessName"] = scrapeDetail.get_business_name(soup)
-                business_data["Category"] = scrapeDetail.get_category(soup)
-                business_data["City"] = location
-                business_data["Phone"] = scrapeDetail.get_phone(soup)
-                business_data["Email"] = ev.get_email()  # reuses the HTML already fetched in the evaluate() method
-                business_data["Address"] = scrapeDetail.get_address(soup)
-                business_data["GoogleMapsLink"] = link
-                business_data["Priority"] = priority
-                business_data["OwnerContactPerson"] = ev.get_owner_contact()
-                business_data["WebsiteExists"] = ev.get_website_exists(business_data["Website"])
-                business_data["HTTPS"] = ev.get_https(evaluation)
-                business_data["MobileFriendly"] = ev.get_mobile_friendly(evaluation)
-                business_data["CurrentCopyright"] = ev.get_copyright(evaluation)
-                business_data["HasContactForm"] = ev.get_contact_form(evaluation)
-                business_data["HasBookingQuoteCTA"] = ev.get_booking_quote_cta(evaluation)
-                business_data["GoodTitleMetaDescription"] = ev.get_title_meta_description(evaluation)
-                business_data["LooksOriginalAndUnique"] = ev.get_looks_original_unique(evaluation)
-                business_data["OutreachStatus"] = "null"
+                    business_data["BusinessName"] = scrapeDetail.get_business_name(soup)
+                    business_data["Category"] = scrapeDetail.get_category(soup)
+                    business_data["City"] = location
+                    business_data["Phone"] = scrapeDetail.get_phone(soup)
+                    business_data["Email"] = ev.get_email()  # reuses the HTML already fetched in the evaluate() method
+                    business_data["Address"] = scrapeDetail.get_address(soup)
+                    business_data["GoogleMapsLink"] = link
+                    business_data["Priority"] = priority
+                    business_data["OwnerContactPerson"] = ev.get_owner_contact()
+                    business_data["WebsiteExists"] = ev.get_website_exists(business_data["Website"])
+                    business_data["HTTPS"] = ev.get_https(evaluation)
+                    business_data["MobileFriendly"] = ev.get_mobile_friendly(evaluation)
+                    business_data["CurrentCopyright"] = ev.get_copyright(evaluation)
+                    business_data["HasContactForm"] = ev.get_contact_form(evaluation)
+                    business_data["HasBookingQuoteCTA"] = ev.get_booking_quote_cta(evaluation)
+                    business_data["GoodTitleMetaDescription"] = ev.get_title_meta_description(evaluation)
+                    business_data["LooksOriginalAndUnique"] = ev.get_looks_original_unique(evaluation)
+                    business_data["OutreachStatus"] = "null"
 
-                name = business_data.get("BusinessName", "Unknown")
-                print(f"[DONE] {name} | Priority: {priority}")
+                    name = business_data.get("BusinessName", "Unknown")
+                    print(f"[DONE] {name} | Priority: {priority}")
 
-                row = [business_data.get(key, "null") for key in config.headers]
-                store.insert_one_row([row])
-                store.append_to_json(business_data)
-                print("[LOG] Saved to sheet + JSON")
-                count += 1
+                    row = [business_data.get(key, "null") for key in config.headers]
+                    store.insert_one_row([row])
+                    store.append_to_json(business_data)
+                    print("[LOG] Saved to sheet + JSON")
+                    count += 1
+                except Exception:
+                    # one bad page shouldn't kill the whole category — log and move on
+                    traceback.print_exc()
+                    print("[LOG] Skipping business due to error above")
+                    try:
+                        driver.execute_script("window.stop()")  # unblock Chrome if it's mid-load
+                    except Exception:
+                        pass
 
                 time.sleep(config.delay_between_visits)
 
             print(f"\n[LOG] Done -- {count} businesses processed")
-        except:
+            time.sleep(config.delay)
+
+        except Exception:
+            # category-level failure (Maps navigation, scroll, or extract_links) — log and move on
             traceback.print_exc()
+            print(f"[LOG] Category failed, skipping: {business_category}")
             time.sleep(config.delay)
 
     def scroll_content(self):
