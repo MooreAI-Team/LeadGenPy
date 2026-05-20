@@ -30,7 +30,9 @@ def __initialize():
         chrome_options.add_argument("--headless=new")
 
     print("[LOG] Selenium ready")
-    return webdriver.Chrome(options=chrome_options)
+    d = webdriver.Chrome(options=chrome_options)
+    d.set_page_load_timeout(config.page_load_timeout)  # don't hang forever on slow pages
+    return d
 
 
 driver = __initialize()
